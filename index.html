@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mosquito Blood Hunt</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <div id="blood-container">Blood Level: <span id="blood-level">50</span>%</div>
+        <div id="blood-meter-container">
+            <div id="blood-meter-background"></div>
+            <div id="blood-meter-fill"></div>
+        </div>
+        <div id="game-over" class="hidden">
+            <h2>Game Over!</h2>
+            <p>You ran out of blood!</p>
+            <p>Final Blood Level: <span id="final-score">0</span>%</p>
+            <button id="restart-button">Play Again</button>
+        </div>
+        <div id="instructions">
+            <h2>Mosquito Blood Hunt</h2>
+            <p>You are a hungry mosquito that needs blood to survive!</p>
+            <p>Your blood level constantly decreases over time.</p>
+            <p>Suck blood from humans to replenish your blood level.</p>
+            <p>Controls:</p>
+            <ul>
+                <li><strong>Arrow Left/Right</strong>: Turn left/right</li>
+                <li><strong>Arrow Up/Down</strong>: Fly forward/backward</li>
+                <li><strong>W/S</strong>: Fly up/down</li>
+                <li><strong>Space</strong>: Suck blood (when near a human)</li>
+            </ul>
+            <p>Be careful! Humans will remember you and try to swat you!</p>
+            <p>Getting hit will cause you to lose a lot of blood!</p>
+            <p>Flying high won't save you - humans will throw rocks at you!</p>
+            <button id="start-button">Start Game</button>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="game.js"></script>
+</body>
+</html> 
