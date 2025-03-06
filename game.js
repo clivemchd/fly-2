@@ -14,6 +14,8 @@ const MAX_HUMANS = 5; // Maximum number of humans in the world
 let bloodDrainTimer = 0; // Timer for blood drain
 const BLOOD_DRAIN_RATE = 1; // Blood drain rate in % per second
 let rocks = []; // Array to store thrown rocks
+let frustum = new THREE.Frustum(); // Frustum for culling
+let frustumMatrix = new THREE.Matrix4(); // Matrix for frustum calculations
 
 // DOM elements
 const bloodLevelElement = document.getElementById('blood-level');
@@ -1256,6 +1258,12 @@ function animate() {
         // Update camera position
         updateCameraPosition();
         
+        // Update frustum for culling
+        updateFrustum();
+        
+        // Apply frustum culling
+        applyFrustumCulling();
+        
         // Render scene
         renderer.render(scene, camera);
     } catch (error) {
@@ -1264,6 +1272,56 @@ function animate() {
         if (renderer && scene && camera) {
             renderer.render(scene, camera);
         }
+    }
+}
+
+// Update the frustum for culling
+function updateFrustum() {
+    try {
+        // Update the frustum matrix with the camera's projection and view matrices
+        frustumMatrix.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+        frustum.setFromProjectionMatrix(frustumMatrix);
+    } catch (error) {
+        console.error("Error updating frustum:", error);
+    }
+}
+
+// Apply frustum culling to scene objects
+function applyFrustumCulling() {
+    try {
+        // Apply to humans
+        humans.forEach(human => {
+            if (human && human.model) {
+                // Use the human's position to check if it's in the frustum
+                const humanPosition = human.model.position;
+                const inFrustum = frustum.containsPoint(humanPosition);
+                
+                // Only make the human visible if it's in the frustum
+                human.model.visible = inFrustum;
+            }
+        });
+        
+        // Apply to rocks
+        rocks.forEach(rock => {
+            if (rock && rock.mesh) {
+                const rockPosition = rock.mesh.position;
+                const inFrustum = frustum.containsPoint(rockPosition);
+                rock.mesh.visible = inFrustum;
+            }
+        });
+        
+        // Apply to impact effects
+        impactEffects.forEach(effect => {
+            if (effect && effect.mesh) {
+                const effectPosition = effect.mesh.position;
+                const inFrustum = frustum.containsPoint(effectPosition);
+                effect.mesh.visible = inFrustum;
+            }
+        });
+        
+        // No need to check the mosquito as it's always in view
+    } catch (error) {
+        console.error("Error applying frustum culling:", error);
     }
 }
 

@@ -37,9 +37,17 @@ This game is built using:
 - Vanilla JavaScript for game logic
 - HTML/CSS for UI elements
 
+### Performance Optimizations
+
+- **Frustum Culling**: The game implements frustum culling to improve performance by only rendering objects that are within the camera's view frustum. This reduces unnecessary rendering of off-screen objects like humans, rocks, and impact effects.
+
 ## Setup
 
 No build process is required. Simply open the `index.html` file in a modern web browser to play the game.
+
+## Deployment
+
+The game is deployed on GitHub Pages and can be accessed at: https://clivemchd.github.io/fly-2/
 
 ## Credits
 
