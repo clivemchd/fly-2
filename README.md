@@ -41,6 +41,25 @@ This game is built using:
 
 - **Frustum Culling**: The game implements frustum culling to improve performance by only rendering objects that are within the camera's view frustum. This reduces unnecessary rendering of off-screen objects like humans, rocks, and impact effects.
 
+### Debug Features
+
+The game includes several debugging features to help visualize and verify the frustum culling:
+
+- **Debug Mode (F9)**: Press F9 to toggle debug mode, which:
+  - Displays a wireframe view of all objects
+  - Shows a camera helper to visualize the frustum boundaries
+  - Displays red sphere markers above culled humans
+  - Shows statistics about how many objects are being culled
+
+- **Toggle Frustum Culling (F10)**: Press F10 to toggle frustum culling on/off to compare performance
+
+- **Debug Stats Display**: When debug mode is enabled, a panel appears showing:
+  - Current frustum culling status
+  - Number of visible vs. total objects
+  - Total number of culled objects
+
+These features make it easy to verify that frustum culling is working correctly and to measure its impact on performance.
+
 ## Setup
 
 No build process is required. Simply open the `index.html` file in a modern web browser to play the game.

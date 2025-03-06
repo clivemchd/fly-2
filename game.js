@@ -17,6 +17,13 @@ let rocks = []; // Array to store thrown rocks
 let frustum = new THREE.Frustum(); // Frustum for culling
 let frustumMatrix = new THREE.Matrix4(); // Matrix for frustum calculations
 
+// Debugging variables
+let frustumCullingEnabled = true; // Toggle for frustum culling
+let showCullingStats = true; // Toggle for showing culling statistics
+let debugStatsElement; // DOM element for displaying culling statistics
+let cullingStats = { humans: 0, rocks: 0, effects: 0 }; // Statistics for culled objects
+let debugMode = false; // Toggle for debug mode
+
 // DOM elements
 const bloodLevelElement = document.getElementById('blood-level');
 const bloodMeterFill = document.getElementById('blood-meter-fill');
@@ -82,6 +89,17 @@ function init() {
         
         // Handle window resize
         window.addEventListener('resize', onWindowResize);
+        
+        // Create debug stats element
+        createDebugElements();
+        
+        // Add debug key listener
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F9') {
+                debugMode = !debugMode;
+                toggleDebugMode();
+            }
+        });
         
         // Start animation loop
         animate();
@@ -1261,17 +1279,71 @@ function animate() {
         // Update frustum for culling
         updateFrustum();
         
-        // Apply frustum culling
-        applyFrustumCulling();
+        // Apply frustum culling if enabled
+        if (frustumCullingEnabled) {
+            applyFrustumCulling();
+        } else {
+            // Make all objects visible when culling is disabled
+            makeAllObjectsVisible();
+        }
+        
+        // Update debug stats
+        if (debugMode) {
+            updateDebugStats();
+            
+            // Update frustum helper if it exists
+            if (window.frustumHelper) {
+                window.frustumHelper.update();
+            }
+        }
         
         // Render scene
         renderer.render(scene, camera);
+        
+        // Add key listener for toggling frustum culling
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F10') {
+                frustumCullingEnabled = !frustumCullingEnabled;
+                console.log("Frustum culling:", frustumCullingEnabled ? "ON" : "OFF");
+            }
+        });
     } catch (error) {
         console.error("Error in animation loop:", error);
         // Still try to render the scene even if there was an error
         if (renderer && scene && camera) {
             renderer.render(scene, camera);
         }
+    }
+}
+
+// Make all objects visible (when culling is disabled)
+function makeAllObjectsVisible() {
+    try {
+        // Reset culling stats
+        cullingStats = { humans: 0, rocks: 0, effects: 0 };
+        
+        // Make all humans visible
+        humans.forEach(human => {
+            if (human && human.model) {
+                human.model.visible = true;
+            }
+        });
+        
+        // Make all rocks visible
+        rocks.forEach(rock => {
+            if (rock && rock.mesh) {
+                rock.mesh.visible = true;
+            }
+        });
+        
+        // Make all impact effects visible
+        impactEffects.forEach(effect => {
+            if (effect && effect.mesh) {
+                effect.mesh.visible = true;
+            }
+        });
+    } catch (error) {
+        console.error("Error making all objects visible:", error);
     }
 }
 
@@ -1289,6 +1361,9 @@ function updateFrustum() {
 // Apply frustum culling to scene objects
 function applyFrustumCulling() {
     try {
+        // Reset culling stats
+        cullingStats = { humans: 0, rocks: 0, effects: 0 };
+        
         // Apply to humans
         humans.forEach(human => {
             if (human && human.model) {
@@ -1298,6 +1373,27 @@ function applyFrustumCulling() {
                 
                 // Only make the human visible if it's in the frustum
                 human.model.visible = inFrustum;
+                
+                // Update culling stats
+                if (!inFrustum) {
+                    cullingStats.humans++;
+                    
+                    // Visual indicator for culled objects in debug mode
+                    if (debugMode && human.model.userData.debugMarker === undefined) {
+                        const marker = new THREE.Mesh(
+                            new THREE.SphereGeometry(0.5, 8, 8),
+                            new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true })
+                        );
+                        marker.position.copy(humanPosition);
+                        marker.position.y += 5; // Position above the human
+                        scene.add(marker);
+                        human.model.userData.debugMarker = marker;
+                    }
+                } else if (human.model.userData.debugMarker) {
+                    // Remove debug marker when object becomes visible again
+                    scene.remove(human.model.userData.debugMarker);
+                    human.model.userData.debugMarker = undefined;
+                }
             }
         });
         
@@ -1307,6 +1403,11 @@ function applyFrustumCulling() {
                 const rockPosition = rock.mesh.position;
                 const inFrustum = frustum.containsPoint(rockPosition);
                 rock.mesh.visible = inFrustum;
+                
+                // Update culling stats
+                if (!inFrustum) {
+                    cullingStats.rocks++;
+                }
             }
         });
         
@@ -1316,12 +1417,100 @@ function applyFrustumCulling() {
                 const effectPosition = effect.mesh.position;
                 const inFrustum = frustum.containsPoint(effectPosition);
                 effect.mesh.visible = inFrustum;
+                
+                // Update culling stats
+                if (!inFrustum) {
+                    cullingStats.effects++;
+                }
             }
         });
         
         // No need to check the mosquito as it's always in view
     } catch (error) {
         console.error("Error applying frustum culling:", error);
+    }
+}
+
+// Create debug elements
+function createDebugElements() {
+    try {
+        // Create debug stats container
+        debugStatsElement = document.createElement('div');
+        debugStatsElement.id = 'debug-stats';
+        debugStatsElement.style.position = 'absolute';
+        debugStatsElement.style.top = '10px';
+        debugStatsElement.style.right = '10px';
+        debugStatsElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        debugStatsElement.style.color = 'white';
+        debugStatsElement.style.padding = '10px';
+        debugStatsElement.style.borderRadius = '5px';
+        debugStatsElement.style.fontFamily = 'monospace';
+        debugStatsElement.style.fontSize = '14px';
+        debugStatsElement.style.display = 'none'; // Hidden by default
+        document.getElementById('game-container').appendChild(debugStatsElement);
+    } catch (error) {
+        console.error("Error creating debug elements:", error);
+    }
+}
+
+// Toggle debug mode
+function toggleDebugMode() {
+    try {
+        debugStatsElement.style.display = debugMode ? 'block' : 'none';
+        
+        // Toggle wireframe mode for all objects to visualize culling
+        scene.traverse(object => {
+            if (object.isMesh && object.material) {
+                if (Array.isArray(object.material)) {
+                    object.material.forEach(material => {
+                        material.wireframe = debugMode;
+                    });
+                } else {
+                    object.material.wireframe = debugMode;
+                }
+            }
+        });
+        
+        // Add visual indicators for frustum boundaries if in debug mode
+        if (debugMode && !window.frustumHelper) {
+            // Create a camera helper to visualize the frustum
+            window.frustumHelper = new THREE.CameraHelper(camera);
+            scene.add(window.frustumHelper);
+        } else if (!debugMode && window.frustumHelper) {
+            // Remove the frustum helper when debug mode is disabled
+            scene.remove(window.frustumHelper);
+            window.frustumHelper = null;
+        }
+        
+        console.log("Debug mode:", debugMode ? "ON" : "OFF");
+    } catch (error) {
+        console.error("Error toggling debug mode:", error);
+    }
+}
+
+// Update debug stats
+function updateDebugStats() {
+    try {
+        if (!debugMode || !debugStatsElement) return;
+        
+        // Count total objects
+        const totalHumans = humans.length;
+        const totalRocks = rocks.length;
+        const totalEffects = impactEffects.length;
+        
+        // Update stats display
+        debugStatsElement.innerHTML = `
+            <div>FRUSTUM CULLING: ${frustumCullingEnabled ? 'ON' : 'OFF'}</div>
+            <div>Press F9 to toggle debug mode</div>
+            <div>Press F10 to toggle frustum culling</div>
+            <hr>
+            <div>HUMANS: ${totalHumans - cullingStats.humans}/${totalHumans} visible</div>
+            <div>ROCKS: ${totalRocks - cullingStats.rocks}/${totalRocks} visible</div>
+            <div>EFFECTS: ${totalEffects - cullingStats.effects}/${totalEffects} visible</div>
+            <div>TOTAL CULLED: ${cullingStats.humans + cullingStats.rocks + cullingStats.effects}</div>
+        `;
+    } catch (error) {
+        console.error("Error updating debug stats:", error);
     }
 }
 
